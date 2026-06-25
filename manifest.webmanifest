@@ -1,0 +1,18 @@
+{
+  "name": "我的私人記錄",
+  "short_name": "私人記錄",
+  "description": "本機加密的私人日常記錄 App",
+  "lang": "zh-HK",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
