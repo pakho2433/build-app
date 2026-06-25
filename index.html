@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="私人記錄">
+  <title>我的私人記錄</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans HK",sans-serif;color:#111827;background:#f3f4f6;color-scheme:light}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh}.hidden{display:none!important}
+    button,input,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:700}
+    .primary{background:#111827;color:white}.secondary{background:#e5e7eb;color:#111827}.danger{background:#fee2e2;color:#991b1b}.ghost{background:transparent;color:#374151;padding:8px}
+    .shell{max-width:900px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+    .card{background:white;border-radius:20px;padding:18px;box-shadow:0 8px 30px rgba(17,24,39,.08);margin-bottom:16px}
+    h1,h2,h3,p{margin-top:0}.muted{color:#6b7280}.small{font-size:.86rem}.row{display:flex;gap:10px;align-items:center}.wrap{flex-wrap:wrap}.between{justify-content:space-between}.grow{flex:1}
+    input,textarea{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:12px;background:white;color:#111827}textarea{min-height:150px;resize:vertical}
+    label{display:block;font-weight:700;margin:12px 0 6px}.auth{max-width:460px;margin:8vh auto}.notice{background:#ecfdf5;color:#065f46;border-radius:14px;padding:12px;margin-bottom:14px}
+    .topbar{position:sticky;top:0;z-index:5;background:rgba(243,244,246,.92);backdrop-filter:blur(12px);padding:8px 0 12px}
+    .note{border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-top:10px;background:#fff}.note h3{margin-bottom:5px}.note-text{white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+    .tag{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:999px;padding:4px 9px;font-size:.78rem;margin-right:6px}.empty{text-align:center;padding:34px 12px;color:#6b7280}
+    dialog{border:0;border-radius:20px;width:min(92vw,650px);padding:0;box-shadow:0 24px 70px rgba(0,0,0,.25)}dialog::backdrop{background:rgba(17,24,39,.55)}.dialog-inner{padding:18px}
+    .file-label{display:inline-block;background:#e5e7eb;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}.file-label input{display:none}
+    #status{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#111827;color:white;border-radius:999px;padding:10px 15px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+    @media(max-width:600px){.desktop-only{display:none}.row.mobile-stack{align-items:stretch;flex-direction:column}.row.mobile-stack button{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section id="setupView" class="auth hidden">
+      <div class="card">
+        <h1>建立私人記錄庫</h1>
+        <div class="notice">資料只會加密儲存在呢部裝置，不會上傳 GitHub 或其他伺服器。</div>
+        <p class="muted">請設定私人密碼。忘記密碼後無法復原，所以請自行記低。</p>
+        <form id="setupForm">
+          <label for="newPassword">私人密碼</label>
+          <input id="newPassword" type="password" minlength="6" autocomplete="new-password" required>
+          <label for="confirmPassword">再次輸入</label>
+          <input id="confirmPassword" type="password" minlength="6" autocomplete="new-password" required>
+          <button class="primary" style="width:100%;margin-top:16px">建立記錄庫</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="unlockView" class="auth hidden">
+      <div class="card">
+        <h1>🔒 我的私人記錄</h1>
+        <p class="muted">輸入密碼解鎖。資料只儲存在目前瀏覽器。</p>
+        <form id="unlockForm">
+          <label for="unlockPassword">私人密碼</label>
+          <input id="unlockPassword" type="password" autocomplete="current-password" required>
+          <button class="primary" style="width:100%;margin-top:16px">解鎖</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="appView" class="hidden">
+      <div class="topbar">
+        <div class="row between">
+          <div><h1 style="margin:0">我的私人記錄</h1><div class="muted small">本機加密・不上傳雲端</div></div>
+          <button id="lockBtn" class="secondary">鎖定</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row mobile-stack">
+          <input id="searchInput" class="grow" type="search" placeholder="搜尋標題、分類或內容">
+          <button id="newBtn" class="primary">＋ 新增記錄</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row between wrap">
+          <div><strong id="recordCount">0 項記錄</strong><div class="muted small">每次儲存後會立即加密</div></div>
+          <div class="row wrap">
+            <button id="exportBtn" class="secondary">匯出加密備份</button>
+            <label class="file-label">匯入備份<input id="importInput" type="file" accept="application/json,.json"></label>
+            <button id="resetBtn" class="danger">清除全部</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="notesList"></div>
+    </section>
+  </main>
+
+  <dialog id="editorDialog">
+    <form id="editorForm" class="dialog-inner">
+      <div class="row between"><h2 id="editorHeading">新增記錄</h2><button type="button" id="closeEditor" class="ghost">✕</button></div>
+      <input id="editId" type="hidden">
+      <label for="noteDate">日期</label><input id="noteDate" type="date" required>
+      <label for="noteTitle">標題</label><input id="noteTitle" maxlength="120" required placeholder="例如：今日待辦／健身紀錄">
+      <label for="noteCategory">分類</label><input id="noteCategory" maxlength="40" placeholder="例如：生活、健身、工作">
+      <label for="noteContent">內容</label><textarea id="noteContent" required placeholder="輸入你想保存嘅內容……"></textarea>
+      <div class="row mobile-stack" style="margin-top:16px"><button type="button" id="cancelEditor" class="secondary grow">取消</button><button class="primary grow">儲存並加密</button></div>
+    </form>
+  </dialog>
+
+  <div id="status" class="hidden" role="status"></div>
+
+<script>
+'use strict';
+const META_KEY='privateDailyVaultMetaV1';
+const DB_NAME='privateDailyVaultDB';
+const STORE='vaultStore';
+const VERIFIER='PRIVATE_DAILY_VAULT_OK';
+let cryptoKey=null;
+let appData={notes:[]};
+let statusTimer;
+
+const $=s=>document.querySelector(s);
+const setupView=$('#setupView'),unlockView=$('#unlockView'),appView=$('#appView');
+
+function bytesToB64(bytes){let s='';bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s)}
+function b64ToBytes(str){const s=atob(str);return Uint8Array.from(s,c=>c.charCodeAt(0))}
+function randomBytes(n){return crypto.getRandomValues(new Uint8Array(n))}
+function show(view){[setupView,unlockView,appView].forEach(v=>v.classList.add('hidden'));view.classList.remove('hidden')}
+function toast(msg){const el=$('#status');el.textContent=msg;el.classList.remove('hidden');clearTimeout(statusTimer);statusTimer=setTimeout(()=>el.classList.add('hidden'),2200)}
+function today(){return new Date().toLocaleDateString('en-CA')}
+function escapeHtml(v=''){return v.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
+
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE)};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function dbGet(key){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly');const req=tx.objectStore(STORE).get(key);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close()})}
+async function dbSet(key,value){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(value,key);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>reject(tx.error)})}
+async function dbClear(){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).clear();tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>reject(tx.error)})}
+
+async function deriveKey(password,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function encryptValue(value,key){const iv=randomBytes(12);const plain=new TextEncoder().encode(JSON.stringify(value));const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain);return{iv:bytesToB64(iv),data:bytesToB64(new Uint8Array(cipher))}}
+async function decryptValue(payload,key){const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBytes(payload.iv)},key,b64ToBytes(payload.data));return JSON.parse(new TextDecoder().decode(plain))}
+async function saveVault(){if(!cryptoKey)throw new Error('Vault locked');await dbSet('vault',await encryptValue(appData,cryptoKey))}
+
+async function initialize(){const meta=localStorage.getItem(META_KEY);show(meta?unlockView:setupView)}
+
+$('#setupForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const p=$('#newPassword').value,c=$('#confirmPassword').value;
+  if(p!==c)return toast('兩次密碼不一致');
+  if(p.length<6)return toast('密碼最少需要 6 個字元');
+  try{
+    const salt=randomBytes(16);cryptoKey=await deriveKey(p,salt);
+    const verifier=await encryptValue(VERIFIER,cryptoKey);
+    localStorage.setItem(META_KEY,JSON.stringify({version:1,salt:bytesToB64(salt),verifier}));
+    appData={notes:[]};await saveVault();
+    e.target.reset();show(appView);render();toast('私人記錄庫已建立');
+  }catch(err){console.error(err);toast('建立失敗，請再試一次')}
+});
+
+$('#unlockForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  try{
+    const meta=JSON.parse(localStorage.getItem(META_KEY));
+    const candidate=await deriveKey($('#unlockPassword').value,b64ToBytes(meta.salt));
+    const check=await decryptValue(meta.verifier,candidate);
+    if(check!==VERIFIER)throw new Error('Bad verifier');
+    const vault=await dbGet('vault');
+    appData=vault?await decryptValue(vault,candidate):{notes:[]};
+    if(!Array.isArray(appData.notes))appData.notes=[];
+    cryptoKey=candidate;e.target.reset();show(appView);render();toast('已解鎖');
+  }catch(err){console.warn(err);toast('密碼錯誤或資料損壞')}
+});
+
+function lock(){cryptoKey=null;appData={notes:[]};$('#searchInput').value='';show(unlockView);toast('已鎖定')}
+$('#lockBtn').addEventListener('click',lock);
+
+function render(){
+  const q=$('#searchInput').value.trim().toLowerCase();
+  const notes=[...appData.notes].sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  const filtered=notes.filter(n=>[n.title,n.category,n.content,n.date].join(' ').toLowerCase().includes(q));
+  $('#recordCount').textContent=`${appData.notes.length} 項記錄`;
+  const list=$('#notesList');
+  if(!filtered.length){list.innerHTML=`<div class="card empty">${q?'找不到符合嘅記錄':'暫時未有記錄，按「新增記錄」開始。'}</div>`;return}
+  list.innerHTML=filtered.map(n=>`<article class="note">
+    <div class="row between" style="align-items:flex-start"><div class="grow"><h3>${escapeHtml(n.title)}</h3><div class="muted small">${escapeHtml(n.date||'')} ${n.category?`<span class="tag">${escapeHtml(n.category)}</span>`:''}</div></div><div class="row"><button class="ghost edit-btn" data-id="${n.id}">編輯</button><button class="ghost delete-btn" data-id="${n.id}" style="color:#991b1b">刪除</button></div></div>
+    <p class="note-text">${escapeHtml(n.content)}</p>
+  </article>`).join('');
+}
+$('#searchInput').addEventListener('input',render);
+
+function openEditor(note=null){
+  $('#editorHeading').textContent=note?'編輯記錄':'新增記錄';
+  $('#editId').value=note?.id||'';$('#noteDate').value=note?.date||today();$('#noteTitle').value=note?.title||'';$('#noteCategory').value=note?.category||'';$('#noteContent').value=note?.content||'';
+  $('#editorDialog').showModal();setTimeout(()=>$('#noteTitle').focus(),50)
+}
+function closeEditor(){$('#editorDialog').close();$('#editorForm').reset()}
+$('#newBtn').addEventListener('click',()=>openEditor());$('#closeEditor').addEventListener('click',closeEditor);$('#cancelEditor').addEventListener('click',closeEditor);
+$('#editorDialog').addEventListener('click',e=>{if(e.target===$('#editorDialog'))closeEditor()});
+
+$('#editorForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const id=$('#editId').value||uid(),now=new Date().toISOString();
+  const old=appData.notes.find(n=>n.id===id);
+  const note={id,date:$('#noteDate').value,title:$('#noteTitle').value.trim(),category:$('#noteCategory').value.trim(),content:$('#noteContent').value.trim(),createdAt:old?.createdAt||now,updatedAt:now};
+  if(old)appData.notes=appData.notes.map(n=>n.id===id?note:n);else appData.notes.push(note);
+  try{await saveVault();closeEditor();render();toast('已加密儲存')}catch(err){console.error(err);toast('儲存失敗')}
+});
+
+$('#notesList').addEventListener('click',async e=>{
+  const edit=e.target.closest('.edit-btn'),del=e.target.closest('.delete-btn');
+  if(edit){const note=appData.notes.find(n=>n.id===edit.dataset.id);if(note)openEditor(note)}
+  if(del){const note=appData.notes.find(n=>n.id===del.dataset.id);if(note&&confirm(`確定刪除「${note.title}」？`)){appData.notes=appData.notes.filter(n=>n.id!==note.id);await saveVault();render();toast('記錄已刪除')}}
+});
+
+$('#exportBtn').addEventListener('click',async()=>{
+  try{
+    const backup={app:'private-daily-vault',exportedAt:new Date().toISOString(),meta:JSON.parse(localStorage.getItem(META_KEY)),vault:await dbGet('vault')};
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`private-records-backup-${today()}.json`;a.click();URL.revokeObjectURL(url);toast('加密備份已匯出');
+  }catch(err){console.error(err);toast('備份失敗')}
+});
+
+$('#importInput').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const backup=JSON.parse(await file.text());
+    if(backup.app!=='private-daily-vault'||!backup.meta?.salt||!backup.meta?.verifier||!backup.vault?.data)throw new Error('Invalid backup');
+    if(!confirm('匯入會覆蓋目前裝置內所有記錄，確定繼續？'))return;
+    localStorage.setItem(META_KEY,JSON.stringify(backup.meta));await dbSet('vault',backup.vault);e.target.value='';lock();toast('備份已匯入，請用原本密碼解鎖');
+  }catch(err){console.error(err);toast('備份檔案格式不正確')}
+});
+
+$('#resetBtn').addEventListener('click',async()=>{
+  const answer=prompt('此操作不可復原。請輸入「刪除全部」確認：');
+  if(answer!=='刪除全部')return toast('已取消');
+  await dbClear();localStorage.removeItem(META_KEY);cryptoKey=null;appData={notes:[]};show(setupView);toast('所有本機資料已清除');
+});
+
+window.addEventListener('pagehide',()=>{cryptoKey=null});
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.warn));
+initialize();
+</script>
+</body>
+</html>
